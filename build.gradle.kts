@@ -385,6 +385,10 @@ allprojects {
         isReproducibleFileOrder = true
     }
 
+    tasks.withType<ProGuardTask> {
+        outputs.cacheIf { true }
+    }
+
     tasks {
         register("listArchives") { listConfigurationContents("archives") }
 
