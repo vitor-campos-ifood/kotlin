@@ -5,7 +5,7 @@ plugins {
 
 dependencies {
     compile(kotlinStdlib())
-    compile(toolsJar())
+    compileOnly(toolsJar())
     testCompile(commonDep("junit:junit"))
 }
 
