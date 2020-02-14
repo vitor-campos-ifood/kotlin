@@ -9,6 +9,17 @@ import java.util.WeakHashMap
 
 internal class NonThreadSafeInterner<T : Any> {
     private val pool = WeakHashMap<T, T>()
+    private var invocations: Long = 0
+    private var internments: Long = 0
 
-    fun intern(value: T): T = pool.computeIfAbsent(value) { value }
+    val internmentRatio: Double
+        get() = if (invocations > 0) internments.toDouble() / invocations else .0
+
+    fun intern(value: T): T {
+        val interned = pool.computeIfAbsent(value) { value }
+        invocations++
+        if (interned !== value) internments++
+
+        return interned
+    }
 }
