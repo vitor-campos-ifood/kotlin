@@ -382,6 +382,7 @@ class JavaClassEnhancementScope(
                 typeInSignature.getTypeRef(it)
             },
             isCovariant,
+            typeInSignature is TypeInSignature.Return,
             // recompute default type qualifiers using type annotations
             containerContext.copyWithNewDefaultTypeQualifiers(
                 typeQualifierResolver, jsr305State, typeRef.annotations

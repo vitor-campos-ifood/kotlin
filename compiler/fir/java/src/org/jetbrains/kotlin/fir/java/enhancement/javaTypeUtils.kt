@@ -13,7 +13,6 @@ import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.expressions.*
 import org.jetbrains.kotlin.fir.expressions.builder.buildConstExpression
 import org.jetbrains.kotlin.fir.expressions.builder.buildQualifiedAccessExpression
-import org.jetbrains.kotlin.fir.java.JavaTypeParameterStack
 import org.jetbrains.kotlin.fir.java.declarations.FirJavaClass
 import org.jetbrains.kotlin.fir.java.declarations.FirJavaField
 import org.jetbrains.kotlin.fir.references.builder.buildResolvedNamedReference
@@ -22,7 +21,6 @@ import org.jetbrains.kotlin.fir.symbols.ConeClassLikeLookupTag
 import org.jetbrains.kotlin.fir.symbols.ConeClassifierLookupTag
 import org.jetbrains.kotlin.fir.symbols.ConeTypeParameterLookupTag
 import org.jetbrains.kotlin.fir.symbols.impl.ConeClassLikeLookupTagImpl
-import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
 import org.jetbrains.kotlin.fir.typeContext
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.fir.types.builder.buildResolvedTypeRef
@@ -55,8 +53,9 @@ internal fun FirJavaTypeRef.enhance(
     session: FirSession,
     qualifiers: IndexedJavaTypeQualifiers,
     typeWithoutEnhancement: ConeKotlinType,
+    isReturnPosition: Boolean
 ): FirResolvedTypeRef {
-    return typeWithoutEnhancement.enhancePossiblyFlexible(session, annotations, qualifiers, 0)
+    return typeWithoutEnhancement.enhancePossiblyFlexible(session, annotations, qualifiers, 0, isReturnPosition)
 }
 
 // The index in the lambda is the position of the type component:
@@ -67,9 +66,10 @@ private fun ConeKotlinType.enhancePossiblyFlexible(
     session: FirSession,
     annotations: List<FirAnnotationCall>,
     qualifiers: IndexedJavaTypeQualifiers,
-    index: Int
+    index: Int,
+    isReturnPosition: Boolean
 ): FirResolvedTypeRef {
-    val enhanced = enhanceConeKotlinType(session, qualifiers, index)
+    val enhanced = enhanceConeKotlinType(session, qualifiers, index, isReturnPosition)
 
     return buildResolvedTypeRef {
         this.type = enhanced
@@ -80,26 +80,31 @@ private fun ConeKotlinType.enhancePossiblyFlexible(
 private fun ConeKotlinType.enhanceConeKotlinType(
     session: FirSession,
     qualifiers: IndexedJavaTypeQualifiers,
-    index: Int
+    index: Int,
+    isReturnPosition: Boolean
 ): ConeKotlinType {
     return when (this) {
         is ConeFlexibleType -> {
             val lowerResult = lowerBound.enhanceInflexibleType(
-                session, TypeComponentPosition.FLEXIBLE_LOWER, qualifiers, index
+                session, TypeComponentPosition.FLEXIBLE_LOWER,
+                qualifiers, index, isReturnPosition
             )
             val upperResult = upperBound.enhanceInflexibleType(
-                session, TypeComponentPosition.FLEXIBLE_UPPER, qualifiers, index
+                session, TypeComponentPosition.FLEXIBLE_UPPER,
+                qualifiers, index, isReturnPosition
             )
 
             when {
                 lowerResult === lowerBound && upperResult === upperBound -> this
                 this is ConeRawType -> ConeRawType(lowerResult, upperResult)
                 else -> coneFlexibleOrSimpleType(
-                    session, lowerResult, upperResult, isNotNullTypeParameter = qualifiers(index).isNotNullTypeParameter
+                    session, lowerResult, upperResult,
+                    // && isReturnPosition: temporary to provide KT-36770 work...
+                    isNotNullTypeParameter = qualifiers(index).isNotNullTypeParameter && isReturnPosition
                 )
             }
         }
-        is ConeSimpleKotlinType -> enhanceInflexibleType(session, TypeComponentPosition.INFLEXIBLE, qualifiers, index)
+        is ConeSimpleKotlinType -> enhanceInflexibleType(session, TypeComponentPosition.INFLEXIBLE, qualifiers, index, isReturnPosition)
         else -> this
     }
 }
@@ -154,7 +159,8 @@ private fun ConeKotlinType.enhanceInflexibleType(
     session: FirSession,
     position: TypeComponentPosition,
     qualifiers: IndexedJavaTypeQualifiers,
-    index: Int
+    index: Int,
+    isReturnPosition: Boolean
 ): ConeKotlinType {
     require(this !is ConeFlexibleType) {
         "$this should not be flexible"
@@ -181,7 +187,7 @@ private fun ConeKotlinType.enhanceInflexibleType(
                 require(arg is ConeKotlinType) { "Should be invariant type: $arg" }
                 globalArgIndex += arg.subtreeSize()
 
-                arg.enhanceConeKotlinType(session, qualifiers, globalArgIndex).also {
+                arg.enhanceConeKotlinType(session, qualifiers, globalArgIndex, isReturnPosition).also {
                     if (it !== arg) {
                         wereChangesInArgs = true
                     }
@@ -278,7 +284,7 @@ internal fun ConeKotlinType.lexicalCastFrom(session: FirSession, value: String):
                 buildQualifiedAccessExpression {
                     calleeReference = buildResolvedNamedReference {
                         this.name = name
-                        resolvedSymbol = firStaticProperty.symbol as FirCallableSymbol<*>
+                        resolvedSymbol = firStaticProperty.symbol
                     }
                 }
             } else null
