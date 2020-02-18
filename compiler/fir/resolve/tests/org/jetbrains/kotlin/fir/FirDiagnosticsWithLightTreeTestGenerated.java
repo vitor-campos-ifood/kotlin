@@ -193,6 +193,11 @@ public class FirDiagnosticsWithLightTreeTestGenerated extends AbstractFirDiagnos
         runTest("compiler/fir/resolve/testData/resolve/invokeOfLambdaWithReceiver.kt");
     }
 
+    @TestMetadata("javaClassifiers.kt")
+    public void testJavaClassifiers() throws Exception {
+        runTest("compiler/fir/resolve/testData/resolve/javaClassifiers.kt");
+    }
+
     @TestMetadata("javaFieldVsAccessor.kt")
     public void testJavaFieldVsAccessor() throws Exception {
         runTest("compiler/fir/resolve/testData/resolve/javaFieldVsAccessor.kt");

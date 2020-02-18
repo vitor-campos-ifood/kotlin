@@ -1,0 +1,4 @@
+FILE: test.kt
+    public final fun test(): R|kotlin/Unit| {
+        lval x: R|kotlin/Int| = Q|Owner.Nested.Son.GrandSon|.R|/Owner.Nested.Son.GrandSon.field|
+    }
