@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
 import org.jetbrains.kotlin.fir.references.builder.buildResolvedNamedReference
 import org.jetbrains.kotlin.fir.resolve.FirSymbolProvider
 import org.jetbrains.kotlin.fir.resolve.calls.FirNamedReferenceWithCandidate
+import org.jetbrains.kotlin.fir.resolve.toSymbol
 import org.jetbrains.kotlin.fir.resolve.transformers.body.resolve.resultType
 import org.jetbrains.kotlin.fir.resolvedTypeFromPrototype
 import org.jetbrains.kotlin.fir.scopes.impl.FirIntegerOperator
@@ -54,8 +55,8 @@ class IntegerLiteralTypeApproximationTransformer(
         val operator = functionCall.toResolvedCallableSymbol()?.fir as? FirIntegerOperator ?: return functionCall.compose()
         functionCall.transformChildren(this, data)
         val argumentType = functionCall.arguments.firstOrNull()?.resultType?.coneTypeUnsafe<ConeClassLikeType>()
-        val receiverClassId = functionCall.dispatchReceiver.typeRef.coneTypeUnsafe<ConeClassLikeType>().lookupTag.classId
-        val scope = declaredMemberScope((symbolProvider.getClassLikeSymbolByFqName(receiverClassId) as FirRegularClassSymbol).fir)
+        val receiverLookupTag = functionCall.dispatchReceiver.typeRef.coneTypeUnsafe<ConeClassLikeType>().lookupTag
+        val scope = declaredMemberScope((symbolProvider.getSymbolByLookupTag(receiverLookupTag) as FirRegularClassSymbol).fir)
         var resultSymbol: FirFunctionSymbol<*>? = null
         scope.processFunctionsByName(operator.name) { symbol ->
             if (resultSymbol != null) {

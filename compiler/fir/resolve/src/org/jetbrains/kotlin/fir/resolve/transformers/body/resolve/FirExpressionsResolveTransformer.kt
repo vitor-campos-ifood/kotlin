@@ -30,7 +30,6 @@ import org.jetbrains.kotlin.fir.resolve.transformers.InvocationKindTransformer
 import org.jetbrains.kotlin.fir.resolve.transformers.StoreReceiver
 import org.jetbrains.kotlin.fir.scopes.impl.withReplacedConeType
 import org.jetbrains.kotlin.fir.symbols.StandardClassIds
-import org.jetbrains.kotlin.fir.symbols.impl.ConeClassLookupTagWithFixedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirVariableSymbol
 import org.jetbrains.kotlin.fir.symbols.invoke
@@ -586,12 +585,7 @@ class FirExpressionsResolveTransformer(transformer: FirBodyResolveTransformer) :
                 typeArguments = supertype.typeArguments.takeIf { it.isNotEmpty() }?.map { it.toFirTypeProjection() } ?: emptyList()
                 val expandedSupertype = supertype.fullyExpandedType(session)
                 val lookupTag = expandedSupertype.lookupTag
-                if (lookupTag is ConeClassLookupTagWithFixedSymbol) {
-                    lookupTag.symbol
-                } else {
-                    // TODO: support locals
-                    symbolProvider.getSymbolByLookupTag(lookupTag) ?: return delegatedConstructorCall.compose()
-                } as FirClassSymbol<*>
+                symbolProvider.getSymbolByLookupTag(lookupTag) as? FirClassSymbol<*> ?: return delegatedConstructorCall.compose()
             }
             else -> return delegatedConstructorCall.compose()
         }
