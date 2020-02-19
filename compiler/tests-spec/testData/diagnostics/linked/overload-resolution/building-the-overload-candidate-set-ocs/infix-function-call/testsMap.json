@@ -89,7 +89,7 @@
         },
         {
           "specVersion": "0.1-268",
-          "casesNumber": 5,
+          "casesNumber": 6,
           "description": "Local extension infix extension callables",
           "unexpectedBehaviour": false
         },
@@ -123,7 +123,7 @@
         },
         {
           "specVersion": "0.1-268",
-          "casesNumber": 5,
+          "casesNumber": 6,
           "description": "Local extension infix extension callables",
           "path": "compiler/tests-spec/testData/diagnostics/linked/overload-resolution/building-the-overload-candidate-set-ocs/infix-function-call/p-2/pos/3.1.kt",
           "unexpectedBehaviour": false
