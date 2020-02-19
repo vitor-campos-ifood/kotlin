@@ -5,7 +5,7 @@ plugins {
 
 dependencies {
     compile(kotlinStdlib())
-    compileOnly(toolsJar())
+    compileOnly(project(":dependencies:tools-jar-api"))
     testCompile(commonDep("junit:junit"))
 }
 
