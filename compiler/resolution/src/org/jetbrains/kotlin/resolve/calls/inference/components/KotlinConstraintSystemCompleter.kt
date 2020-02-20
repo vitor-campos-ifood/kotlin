@@ -209,7 +209,8 @@ class KotlinConstraintSystemCompleter(
         val functionalType = resultTypeResolver.findResultType(
             c,
             c.notFixedTypeVariables.getValue(variable),
-            TypeVariableDirectionCalculator.ResolveDirection.TO_SUPERTYPE
+            TypeVariableDirectionCalculator.ResolveDirection.TO_SUPERTYPE,
+            discriminateIntersectionType = false
         ) as KotlinType
         if (!functionalType.isSuitable()) return this
         val returnVariable = typeVariableCreator()
@@ -313,8 +314,9 @@ class KotlinConstraintSystemCompleter(
         direction: TypeVariableDirectionCalculator.ResolveDirection,
         topLevelAtoms: List<ResolvedAtom>
     ) {
-        val resultType = resultTypeResolver.findResultType(c, variableWithConstraints, direction)
         val resolvedAtom = findResolvedAtomBy(variableWithConstraints.typeVariable, topLevelAtoms) ?: topLevelAtoms.firstOrNull()
+        val discriminateIntersection = resolvedAtom in topLevelAtoms
+        val resultType = resultTypeResolver.findResultType(c, variableWithConstraints, direction, discriminateIntersection)
         c.fixVariable(variableWithConstraints.typeVariable, resultType, resolvedAtom)
     }
 

@@ -191,7 +191,8 @@ class ConstraintSystemCompleter(val components: InferenceComponents) {
         variableWithConstraints: VariableWithConstraints,
         direction: TypeVariableDirectionCalculator.ResolveDirection
     ) {
-        val resultType = components.resultTypeResolver.findResultType(c, variableWithConstraints, direction)
+        val resultType =
+            components.resultTypeResolver.findResultType(c, variableWithConstraints, direction, discriminateIntersectionType = false)
         c.fixVariable(variableWithConstraints.typeVariable, resultType, atom = null) // TODO: obtain atom for diagnostics
     }
 

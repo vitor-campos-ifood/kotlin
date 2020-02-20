@@ -15,7 +15,7 @@ interface C: A
 
 fun test(a: A, b: B, c: C) {
     if (a is B && a is C) {
-        val d: C = id(<!OI;DEBUG_INFO_SMARTCAST!>a<!>)
+        val d: C = id(<!DEBUG_INFO_SMARTCAST!>a<!>)
         val e: Any = id(a)
         val f = id(a)
         checkSubtype<A>(f)

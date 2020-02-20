@@ -20,6 +20,7 @@ import org.jetbrains.kotlin.resolve.calls.NewCommonSuperTypeCalculator
 import org.jetbrains.kotlin.resolve.calls.inference.components.TypeVariableDirectionCalculator.ResolveDirection
 import org.jetbrains.kotlin.resolve.calls.inference.model.*
 import org.jetbrains.kotlin.types.AbstractTypeApproximator
+import org.jetbrains.kotlin.types.IntersectionTypeConstructor
 import org.jetbrains.kotlin.types.TypeApproximatorConfiguration
 import org.jetbrains.kotlin.types.model.*
 
@@ -33,8 +34,13 @@ class ResultTypeResolver(
         fun isReified(variable: TypeVariableMarker): Boolean
     }
 
-    fun findResultType(c: Context, variableWithConstraints: VariableWithConstraints, direction: ResolveDirection): KotlinTypeMarker {
-        findResultTypeOrNull(c, variableWithConstraints, direction)?.let { return it }
+    fun findResultType(
+        c: Context,
+        variableWithConstraints: VariableWithConstraints,
+        direction: ResolveDirection,
+        discriminateIntersectionType: Boolean
+    ): KotlinTypeMarker {
+        findResultTypeOrNull(c, variableWithConstraints, direction, discriminateIntersectionType)?.let { return it }
 
         // no proper constraints
         return run {
@@ -45,36 +51,42 @@ class ResultTypeResolver(
     private fun findResultTypeOrNull(
         c: Context,
         variableWithConstraints: VariableWithConstraints,
-        direction: ResolveDirection
+        direction: ResolveDirection,
+        discriminateIntersectionType: Boolean,
     ): KotlinTypeMarker? {
         findResultIfThereIsEqualsConstraint(c, variableWithConstraints)?.let { return it }
 
         val subType = c.findSubType(variableWithConstraints)
         val superType = c.findSuperType(variableWithConstraints)
         return if (direction == ResolveDirection.TO_SUBTYPE || direction == ResolveDirection.UNKNOWN) {
-            c.resultType(subType, superType, variableWithConstraints)
+            c.resultType(subType, superType, variableWithConstraints, discriminateIntersectionType)
         } else {
-            c.resultType(superType, subType, variableWithConstraints)
+            c.resultType(superType, subType, variableWithConstraints, discriminateIntersectionType)
         }
     }
 
     private fun Context.resultType(
         firstCandidate: KotlinTypeMarker?,
         secondCandidate: KotlinTypeMarker?,
-        variableWithConstraints: VariableWithConstraints
+        variableWithConstraints: VariableWithConstraints,
+        discriminateIntersectionType: Boolean,
     ): KotlinTypeMarker? {
         if (firstCandidate == null || secondCandidate == null) return firstCandidate ?: secondCandidate
 
-        if (isSuitableType(firstCandidate, variableWithConstraints)) return firstCandidate
+        if (isSuitableType(firstCandidate, variableWithConstraints, discriminateIntersectionType)) return firstCandidate
 
-        return if (isSuitableType(secondCandidate, variableWithConstraints)) {
+        return if (isSuitableType(secondCandidate, variableWithConstraints, discriminateIntersectionType)) {
             secondCandidate
         } else {
             firstCandidate
         }
     }
 
-    private fun Context.isSuitableType(resultType: KotlinTypeMarker, variableWithConstraints: VariableWithConstraints): Boolean {
+    private fun Context.isSuitableType(
+        resultType: KotlinTypeMarker,
+        variableWithConstraints: VariableWithConstraints,
+        discriminateIntersectionType: Boolean
+    ): Boolean {
         val filteredConstraints = variableWithConstraints.constraints.filter { isProperType(it.type) }
         for (constraint in filteredConstraints) {
             if (!checkConstraint(this, constraint.type, constraint.kind, resultType)) return false
@@ -83,6 +95,8 @@ class ResultTypeResolver(
             if (resultType.isNullableType() && checkSingleLowerNullabilityConstraint(filteredConstraints)) return false
             if (isReified(variableWithConstraints.typeVariable)) return false
         }
+
+        if (discriminateIntersectionType && resultType.typeConstructor() is IntersectionTypeConstructor) return false
 
         return true
     }

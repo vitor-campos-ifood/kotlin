@@ -10228,6 +10228,11 @@ public class DiagnosticsTestGenerated extends AbstractDiagnosticsTestWithFirVali
                 runTest("compiler/testData/diagnostics/tests/inference/tooEagerSmartcast.kt");
             }
 
+            @TestMetadata("topLevelIntersection.kt")
+            public void testTopLevelIntersection() throws Exception {
+                runTest("compiler/testData/diagnostics/tests/inference/topLevelIntersection.kt");
+            }
+
             @TestMetadata("tryNumberLowerBoundsBeforeUpperBounds.kt")
             public void testTryNumberLowerBoundsBeforeUpperBounds() throws Exception {
                 runTest("compiler/testData/diagnostics/tests/inference/tryNumberLowerBoundsBeforeUpperBounds.kt");
