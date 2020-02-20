@@ -83,7 +83,12 @@ fun FirClass<*>.unsubstitutedScope(useSiteSession: FirSession, scopeSession: Sco
     return scope(ConeSubstitutor.Empty, useSiteSession, scopeSession)
 }
 
-fun FirClass<*>.scope(substitutor: ConeSubstitutor, useSiteSession: FirSession, scopeSession: ScopeSession): FirScope {
+fun FirClass<*>.scope(
+    substitutor: ConeSubstitutor,
+    useSiteSession: FirSession,
+    scopeSession: ScopeSession,
+    substitutePrivateMembers: Boolean = false
+): FirScope {
     val basicScope = scopeProvider.getUseSiteMemberScope(
         this, useSiteSession, scopeSession
     )
@@ -92,6 +97,6 @@ fun FirClass<*>.scope(substitutor: ConeSubstitutor, useSiteSession: FirSession, 
     return scopeSession.getOrBuild(
         this, ConeSubstitutionScopeKey(substitutor)
     ) {
-        FirClassSubstitutionScope(useSiteSession, basicScope, scopeSession, substitutor)
+        FirClassSubstitutionScope(useSiteSession, basicScope, scopeSession, substitutor, skipPrivateMembers = !substitutePrivateMembers)
     }
 }
