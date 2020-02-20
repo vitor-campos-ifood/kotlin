@@ -82,7 +82,7 @@ class XCoroutineView(val project: Project, val session: XDebugSession) :
     }
 
     init {
-        someCombobox.setRenderer(versionedImplementationProvider.comboboxListCellRenderer())
+        someCombobox.renderer = versionedImplementationProvider.comboboxListCellRenderer()
         object : ComboboxSpeedSearch(someCombobox) {
             override fun getElementText(element: Any?): String? {
                 return element.toString()
@@ -91,8 +91,8 @@ class XCoroutineView(val project: Project, val session: XDebugSession) :
         someCombobox.addItem(null)
         val myToolbar = createToolbar()
         val myThreadsPanel = Wrapper()
-        myThreadsPanel.setBorder(CustomLineBorder(CaptionPanel.CNT_ACTIVE_BORDER_COLOR, 0, 0, 1, 0))
-        myThreadsPanel.add(myToolbar?.getComponent(), BorderLayout.EAST)
+        myThreadsPanel.border = CustomLineBorder(CaptionPanel.CNT_ACTIVE_BORDER_COLOR, 0, 0, 1, 0)
+        myThreadsPanel.add(myToolbar?.component, BorderLayout.EAST)
         myThreadsPanel.add(someCombobox, BorderLayout.CENTER)
         mainPanel.add(panel.mainPanel, BorderLayout.CENTER)
         selectedNodeListener.installOn()

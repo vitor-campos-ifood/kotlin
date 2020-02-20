@@ -6,7 +6,6 @@
 package org.jetbrains.kotlin.idea.debugger.coroutine.proxy
 
 import com.sun.jdi.*
-import org.jetbrains.kotlin.idea.debugger.coroutine.data.CoroutineInfoData
 import org.jetbrains.kotlin.idea.debugger.evaluate.ExecutionContext
 import org.jetbrains.kotlin.idea.debugger.isSubtype
 
@@ -14,9 +13,9 @@ class LookupContinuation(val context: ExecutionContext, val frame: StackTraceEle
 
     private fun suspendOrInvokeSuspend(method: Method): Boolean =
         "Lkotlin/coroutines/Continuation;)" in method.signature() ||
-        (method.name() == "invokeSuspend" && method.signature() == "(Ljava/lang/Object;)Ljava/lang/Object;") // suspend fun or invokeSuspend
+                (method.name() == "invokeSuspend" && method.signature() == "(Ljava/lang/Object;)Ljava/lang/Object;") // suspend fun or invokeSuspend
 
-    private fun findMethod() : Method {
+    private fun findMethod(): Method {
         val clazz = context.findClass(frame.className) as ClassType
         val method = clazz.methodsByName(frame.methodName).last {
             val loc = it.location().lineNumber()
@@ -82,14 +81,9 @@ class LookupContinuation(val context: ExecutionContext, val frame: StackTraceEle
         return context.invokeMethod(continuation, next, emptyList()) as? ObjectReference
     }
 
-    fun findGetStackTraceElementMethodRef(continuation: ObjectReference): Method =
-        (continuation.type() as ClassType).concreteMethodByName("getStackTraceElement", "()Ljava/lang/StackTraceElement;")
-
-    fun createAsyncStackTraceContext(stackTraceElementMethodRef: Method) =
-        AsyncStackTraceContext(context, stackTraceElementMethodRef)
-
     fun createAsyncStackTraceContext(continuation: ObjectReference): AsyncStackTraceContext? {
-        val getStackTraceElementMethodRef = findGetStackTraceElementMethodRef(continuation)
-        return createAsyncStackTraceContext(getStackTraceElementMethodRef)
+        val getStackTraceElementMethodRef =
+            (continuation.type() as ClassType).concreteMethodByName("getStackTraceElement", "()Ljava/lang/StackTraceElement;")
+        return AsyncStackTraceContext(context, getStackTraceElementMethodRef, continuation)
     }
 }

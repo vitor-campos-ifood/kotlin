@@ -10,6 +10,7 @@ import com.intellij.debugger.engine.JavaValue
 import com.intellij.debugger.engine.evaluation.EvaluateException
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
 import com.intellij.debugger.jdi.GeneratedLocation
+import com.intellij.debugger.jdi.StackFrameProxyImpl
 import com.intellij.debugger.ui.impl.watch.ValueDescriptorImpl
 import com.intellij.xdebugger.frame.XNamedValue
 import com.sun.jdi.*
@@ -21,10 +22,12 @@ import org.jetbrains.kotlin.idea.debugger.coroutine.data.CoroutineStackFrameItem
 import org.jetbrains.kotlin.idea.debugger.coroutine.data.DefaultCoroutineStackFrameItem
 import org.jetbrains.kotlin.idea.debugger.isSubtype
 import org.jetbrains.kotlin.idea.debugger.safeVisibleVariableByName
+import org.jetbrains.kotlin.idea.debugger.stackFrame.KotlinStackFrame
 
 class AsyncStackTraceContext(
     val context: ExecutionContext,
-    val method: Method
+    val method: Method,
+    val continuation: ObjectReference
 ) {
     val log by logger
 
@@ -33,7 +36,6 @@ class AsyncStackTraceContext(
     }
 
     fun getAsyncStackTraceIfAny(): List<CoroutineStackFrameItem> {
-        val continuation = locateContinuation() ?: return emptyList()
         val frames = mutableListOf<CoroutineStackFrameItem>()
         try {
             collectFramesRecursively(continuation, frames)
@@ -42,32 +44,6 @@ class AsyncStackTraceContext(
         }
         return frames
     }
-
-    private fun locateContinuation(): ObjectReference? {
-        val continuation: ObjectReference?
-        if (isInvokeSuspendMethod(method)) {
-            continuation = context.frameProxy.thisObject() ?: return null
-            if (!isSuspendLambda(continuation.referenceType()))
-                return null
-        } else if (isContinuationProvider(method)) {
-            val frameProxy = context.frameProxy
-            val continuationVariable = frameProxy.safeVisibleVariableByName(CONTINUATION_VARIABLE_NAME) ?: return null
-            continuation = frameProxy.getValue(continuationVariable) as? ObjectReference ?: return null
-            context.keepReference(continuation)
-        } else {
-            continuation = null
-        }
-        return continuation
-    }
-
-    private fun isInvokeSuspendMethod(method: Method): Boolean =
-        method.name() == "invokeSuspend" && method.signature() == "(Ljava/lang/Object;)Ljava/lang/Object;"
-
-    private fun isContinuationProvider(method: Method): Boolean =
-        "Lkotlin/coroutines/Continuation;)" in method.signature()
-
-    private fun isSuspendLambda(referenceType: ReferenceType): Boolean =
-        SUSPEND_LAMBDA_CLASSES.any { referenceType.isSubtype(it) }
 
     private fun collectFramesRecursively(continuation: ObjectReference, consumer: MutableList<CoroutineStackFrameItem>) {
         val continuationType = continuation.referenceType() as? ClassType ?: return
@@ -169,6 +145,10 @@ class AsyncStackTraceContext(
             return type
         }
         return findBaseContinuationSuperSupertype(type.superclass() ?: return null)
+    }
+
+    fun buildXStackFrame(frame: StackFrameProxyImpl): KotlinStackFrame {
+        return KotlinStackFrame(frame)
     }
 }
 
