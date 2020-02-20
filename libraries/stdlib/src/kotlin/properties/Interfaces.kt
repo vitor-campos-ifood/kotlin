@@ -62,6 +62,7 @@ public interface ReadWriteProperty<in R, T> {
  * @param T the type of object which owns the delegated property.
  * @param D the type of property delegates this provider provides.
  */
+@SinceKotlin("1.4")
 public interface PropertyDelegateProvider<in T, out D> {
     /**
      * Returns the delegate of the property for the given object.
