@@ -171,9 +171,11 @@ class CallArgumentTranslator private constructor(
                 .flatMap { (param, args) -> args.arguments.map { param to it } }
                 .associate { (param, arg) -> arg to param }
 
-        val argumentContexts = resolvedCall.call.valueArguments.associate { it to context.innerBlock() }
+        val valueArguments = argsToParameters.keys
 
-        var result = resolvedCall.call.valueArguments.associate { arg ->
+        val argumentContexts = valueArguments.associate { it to context.innerBlock() }
+
+        var result = valueArguments.associate { arg ->
             val argumentContext = argumentContexts[arg]!!
             val parenthisedArgumentExpression = arg.getArgumentExpression()
 
@@ -193,7 +195,7 @@ class CallArgumentTranslator private constructor(
                 .flatMap { it.arguments }
                 .withIndex()
                 .associate { (index, arg) -> arg to index }
-        val argumentsAreOrdered = resolvedCall.call.valueArguments.withIndex().none { (index, arg) -> resolvedOrder[arg] != index }
+        val argumentsAreOrdered = valueArguments.withIndex().none { (index, arg) -> resolvedOrder[arg] != index }
 
         if (argumentContexts.values.any { !it.currentBlockIsEmpty() } || !argumentsAreOrdered) {
             result = result.map { (arg, expr) ->
@@ -233,7 +235,7 @@ class CallArgumentTranslator private constructor(
         val arguments = resolvedArgument.arguments
         if (arguments.isEmpty()) {
             return if (shouldWrapVarargInArray) {
-                return toArray(varargElementType, listOf()).wrapInUArray(varargElementType)
+                return toArray(varargElementType, mutableListOf()).wrapInUArray(varargElementType)
             } else {
                 null
             }
