@@ -104,3 +104,94 @@ class Case() {
         <!DEBUG_INFO_AS_CALL("fqName: testPackCase3.Case.E.plus; typeCall: operator function")!>e+1<!>
     }
 }
+
+// FILE: LibCase1.kt
+// TESTCASE NUMBER: 5, 6
+package libPackage
+
+import testPackCase5.Case
+import testPackCase5.Case.Inv
+import testPackCase5.Case.E
+
+operator fun Case.E.<!EXTENSION_SHADOWED_BY_MEMBER!>plusAssign<!>(value: Int) {}
+operator fun Case.Inv.<!EXTENSION_SHADOWED_BY_MEMBER!>invoke<!>(i: Int) {}
+
+
+// FILE: TestCase6.kt
+// TESTCASE NUMBER: 5, 6
+package testPackCase5
+import libPackage.plusAssign
+import libPackage.*
+import libPackage.invoke
+
+class Case() {
+
+    class E(val plusAssign: Inv? = null) {
+        operator fun plusAssign(value: Int) {}
+    }
+
+    class Inv() {
+        operator fun invoke(value: Int) {}
+    }
+
+    fun foo(e: E) {
+        operator fun Case.E.<!EXTENSION_SHADOWED_BY_MEMBER!>plusAssign<!>(value: Int) {}
+
+        run {
+            <!DEBUG_INFO_AS_CALL("fqName: testPackCase5.Case.E.plusAssign; typeCall: operator function")!>e+=1<!>
+        }
+        <!DEBUG_INFO_AS_CALL("fqName: testPackCase5.Case.E.plusAssign; typeCall: operator function")!>e+=1<!>
+        <!DEBUG_INFO_AS_CALL("fqName: testPackCase5.Case.E.plusAssign; typeCall: operator function")!>e.plusAssign(1)<!>
+        <!DEBUG_INFO_AS_CALL("fqName: testPackCase5.Case.Inv.invoke; typeCall: operator function")!>e.plusAssign?.invoke(1)<!> //ok
+    }
+}
+
+
+// FILE: LibCase1.kt
+// TESTCASE NUMBER: 7, 8
+package libPackage
+import testPackCase8.Case
+import testPackCase8.Case.Inv
+import testPackCase8.Case.E
+
+operator fun Case.E.<!EXTENSION_SHADOWED_BY_MEMBER!>plusAssign<!>(value: Int) {}
+operator fun Case.Inv.<!EXTENSION_SHADOWED_BY_MEMBER!>invoke<!>(i: Int) {}
+
+// FILE: TestCase3.kt
+// TESTCASE NUMBER: 7, 8
+package testPackCase8
+import libPackage.plusAssign
+import libPackage.*
+import libPackage.invoke
+
+class Case() {
+
+    class E(val plusAssign: Inv? = null) {
+        operator fun plusAssign(value: Int) {}
+    }
+
+    class Inv() {
+        operator fun invoke(value: Int) {}
+    }
+
+    fun foo(e: E) {
+        operator fun E.<!EXTENSION_SHADOWED_BY_MEMBER!>plusAssign<!>(value: Int) {}
+
+        run {
+            operator fun E.<!EXTENSION_SHADOWED_BY_MEMBER!>plusAssign<!>(value: Int) {}
+
+            <!DEBUG_INFO_AS_CALL("fqName: testPackCase8.Case.E.plusAssign; typeCall: operator function")!>e+=1<!>
+        }
+        <!DEBUG_INFO_AS_CALL("fqName: testPackCase8.Case.E.plusAssign; typeCall: operator function")!>e+=1<!>
+    }
+    fun boo(e: E) {
+        /*operator*/ fun E.<!EXTENSION_SHADOWED_BY_MEMBER!>plusAssign<!>(value: Int) {}
+
+        run {
+            /*operator*/ fun E.<!EXTENSION_SHADOWED_BY_MEMBER!>plusAssign<!>(value: Int) {}
+
+            <!DEBUG_INFO_AS_CALL("fqName: testPackCase8.Case.E.plusAssign; typeCall: operator function")!>e+=1<!>
+        }
+        <!DEBUG_INFO_AS_CALL("fqName: testPackCase8.Case.E.plusAssign; typeCall: operator function")!>e+=1<!>
+    }
+}

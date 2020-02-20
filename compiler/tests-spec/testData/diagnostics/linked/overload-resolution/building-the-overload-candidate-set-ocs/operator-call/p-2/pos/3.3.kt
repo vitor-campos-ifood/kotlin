@@ -62,7 +62,7 @@ class Case() {
     }
 }
 
-// FILE: LibCase1.kt
+// FILE: LibCase2.kt
 // TESTCASE NUMBER: 2
 package libPackage1
 import testPackCase2.Case
@@ -72,7 +72,7 @@ import testPackCase2.Case.E
 operator fun Case.E.plus(value: Int) =  Inv()
 operator fun Case.Inv.invoke(i: Int) = 1
 
-// FILE: LibCase1.kt
+// FILE: LibCase2.kt
 // TESTCASE NUMBER: 2
 package libPackage2
 import testPackCase2.Case
@@ -83,7 +83,7 @@ operator fun Case.E.plus(value: Int) =  Inv()
 operator fun Case.Inv.invoke(i: Int) = 1
 
 
-// FILE: TestCase1.kt
+// FILE: TestCase2.kt
 // TESTCASE NUMBER: 2
 package testPackCase2
 import libPackage1.plus
@@ -108,5 +108,86 @@ class Case() {
             <!DEBUG_INFO_AS_CALL("fqName: libPackage1.plus; typeCall: operator extension function")!>e + 1<!>
         }
         <!DEBUG_INFO_AS_CALL("fqName: libPackage1.plus; typeCall: operator extension function")!>e + 1<!>
+    }
+}
+
+// FILE: LibCase3.kt
+// TESTCASE NUMBER: 3
+package libPackage
+import testPackCase3.Case
+import testPackCase3.Case.Inv
+import testPackCase3.Case.E
+
+operator fun Case.E.plusAssign(value: Int) {}
+operator fun Case.Inv.invoke(i: Int) {}
+
+
+// FILE: TestCase3.kt
+// TESTCASE NUMBER:  3
+package testPackCase3
+import libPackage.plusAssign
+import libPackage.invoke
+import libPackage.*
+class Case() {
+
+    class E(val plusAssign: Inv? = null) {
+        /*operator*/ fun plusAssign(value: Int) {}
+    }
+
+    class Inv() {
+        /*operator*/ fun invoke(value: Int) {}
+    }
+
+    fun foo(e: E) {
+        /*operator*/ fun E.<!EXTENSION_SHADOWED_BY_MEMBER!>plusAssign<!>(value: Int) {}
+
+        run {
+            <!DEBUG_INFO_AS_CALL("fqName: libPackage.plusAssign; typeCall: operator extension function")!>e += 1<!>
+        }
+        <!DEBUG_INFO_AS_CALL("fqName: libPackage.plusAssign; typeCall: operator extension function")!>e += 1<!>
+
+    }
+}
+
+
+// FILE: LibCase4.kt
+// TESTCASE NUMBER: 4
+package libPackage
+import testPackCase4.Case
+import testPackCase4.Case.Inv
+import testPackCase4.Case.E
+
+operator fun Case.E.plusAssign(value: Int) {}
+operator fun Case.Inv.invoke(i: Int) {}
+
+
+// FILE: TestCase4.kt
+// TESTCASE NUMBER: 4
+package testPackCase4
+import libPackage.plusAssign
+import libPackage.*
+import libPackage.invoke
+
+operator fun Case.E.plusAssign(value: Int) {}
+
+class Case() {
+
+    class E(val plusAssign: Inv? = null) {
+        /*operator*/ fun plusAssign(value: Int) {}
+    }
+
+    class Inv() {
+        /*operator*/ fun invoke(value: Int) {}
+    }
+
+    fun foo(e: E) {
+        /*operator*/ fun E.<!EXTENSION_SHADOWED_BY_MEMBER!>plusAssign<!>(value: Int) {}
+
+        run {
+            /*operator*/ fun E.<!EXTENSION_SHADOWED_BY_MEMBER!>plusAssign<!>(value: Int) {}
+
+            <!DEBUG_INFO_AS_CALL("fqName: libPackage.plusAssign; typeCall: operator extension function")!>e += 1<!>
+        }
+        <!DEBUG_INFO_AS_CALL("fqName: libPackage.plusAssign; typeCall: operator extension function")!>e += 1<!>
     }
 }

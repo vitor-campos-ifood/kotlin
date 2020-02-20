@@ -93,3 +93,84 @@ class Case() {
         <!DEBUG_INFO_AS_CALL("fqName: testPackCase2.Case.foo.plus; typeCall: operator extension function")!>e + 1<!>
     }
 }
+
+// FILE: LibCase3.kt
+// TESTCASE NUMBER: 3
+package libPackage
+import testPackCase3.Case
+import testPackCase3.Case.Inv
+import testPackCase3.Case.E
+
+operator fun Case.E.plusAssign(value: Int) {}
+operator fun Case.Inv.invoke(i: Int) {}
+
+
+// FILE: TestCase1.kt
+// TESTCASE NUMBER:  3
+package testPackCase3
+import libPackage.plusAssign
+import libPackage.invoke
+import libPackage.*
+class Case() {
+
+    class E(val plusAssign: Inv? = null) {
+        /*operator*/ fun plusAssign(value: Int) {}
+    }
+
+    class Inv() {
+        /*operator*/ fun invoke(value: Int) {}
+    }
+
+    fun foo(e: E) {
+        operator fun E.plusAssign(value: Int) {}
+
+        run {
+            <!DEBUG_INFO_AS_CALL("fqName: testPackCase3.Case.foo.plusAssign; typeCall: operator extension function")!>e += 1<!>
+        }
+        <!DEBUG_INFO_AS_CALL("fqName: testPackCase3.Case.foo.plusAssign; typeCall: operator extension function")!>e += 1<!>
+
+    }
+}
+
+
+// FILE: LibCase1.kt
+// TESTCASE NUMBER: 4
+package libPackage
+import testPackCase4.Case
+import testPackCase4.Case.Inv
+import testPackCase4.Case.E
+
+operator fun Case.E.plusAssign(value: Int) {}
+operator fun Case.Inv.invoke(i: Int) {}
+
+
+// FILE: TestCase1.kt
+// TESTCASE NUMBER: 4
+package testPackCase4
+import libPackage.plusAssign
+import libPackage.*
+import libPackage.invoke
+
+operator fun Case.E.plusAssign(value: Int) {}
+
+class Case() {
+
+    class E(val plusAssign: Inv? = null) {
+        /*operator*/ fun plusAssign(value: Int) {}
+    }
+
+    class Inv() {
+        /*operator*/ fun invoke(value: Int) {}
+    }
+
+    fun foo(e: E) {
+        operator fun E.plusAssign(value: Int) {}
+
+        run {
+            operator fun E.plusAssign(value: Int) {}
+
+            <!DEBUG_INFO_AS_CALL("fqName: testPackCase4.Case.foo.<anonymous>.plusAssign; typeCall: operator extension function")!>e += 1<!>
+        }
+        <!DEBUG_INFO_AS_CALL("fqName: testPackCase4.Case.foo.plusAssign; typeCall: operator extension function")!>e += 1<!>
+    }
+}
