@@ -64,7 +64,7 @@ operator fun Case.Inv.invoke(i: Int) = 1
 
 
 // FILE: TestCase1.kt
-// TESTCASE NUMBER: 3, 4
+// TESTCASE NUMBER: 2
 package testPackCase2
 import libPackage.plus
 import libPackage.*
