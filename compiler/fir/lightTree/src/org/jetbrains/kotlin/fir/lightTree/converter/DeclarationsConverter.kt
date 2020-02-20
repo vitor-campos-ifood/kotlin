@@ -316,6 +316,8 @@ class DeclarationsConverter(
         }
     }
 
+    private fun LighterASTNode.hasValueParameters(): Boolean = getChildNodesByType(VALUE_PARAMETER).isNotEmpty()
+
     /*****    DECLARATIONS    *****/
     /**
      * @see org.jetbrains.kotlin.parsing.KotlinParsing.parseClassOrObject
@@ -417,9 +419,12 @@ class DeclarationsConverter(
 
                 this.superTypeRefs += superTypeRefs
 
+                val secondaryConstructors = classBody.getChildNodesByType(SECONDARY_CONSTRUCTOR)
                 val classWrapper = ClassWrapper(
                     className, modifiers, classKind, primaryConstructor != null,
-                    classBody.getChildNodesByType(SECONDARY_CONSTRUCTOR).isNotEmpty(),
+                    secondaryConstructors.isNotEmpty(),
+                    if (primaryConstructor != null) !primaryConstructor!!.hasValueParameters()
+                    else secondaryConstructors.isEmpty() || secondaryConstructors.any { !it.hasValueParameters() },
                     selfType,
                     delegatedSuperTypeRef ?: defaultDelegatedSuperTypeRef, superTypeCallEntry
                 )
@@ -503,6 +508,7 @@ class DeclarationsConverter(
                 val classWrapper = ClassWrapper(
                     SpecialNames.NO_NAME_PROVIDED, modifiers, ClassKind.OBJECT, hasPrimaryConstructor = false,
                     hasSecondaryConstructor = classBody.getChildNodesByType(SECONDARY_CONSTRUCTOR).isNotEmpty(),
+                    hasDefaultConstructor = false,
                     delegatedSelfTypeRef = delegatedType,
                     delegatedSuperTypeRef = delegatedType,
                     superTypeCallEntry = superTypeCallEntry
@@ -541,6 +547,15 @@ class DeclarationsConverter(
             session = baseSession
             returnTypeRef = classWrapper.delegatedSelfTypeRef
             name = enumEntryName
+            symbol = FirVariableSymbol(CallableId(context.currentClassId, enumEntryName))
+            status = FirDeclarationStatusImpl(Visibilities.PUBLIC, Modality.FINAL).apply {
+                isStatic = true
+            }
+            if (classWrapper.hasDefaultConstructor && enumSuperTypeCallEntry.isEmpty() &&
+                modifiers.annotations.isEmpty() && classBodyNode == null
+            ) {
+                return@buildEnumEntry
+            }
             initializer = withChildClassName(enumEntryName) {
                 buildAnonymousObject {
                     source = this@buildEnumEntry.source
@@ -552,6 +567,7 @@ class DeclarationsConverter(
                     val enumClassWrapper = ClassWrapper(
                         enumEntryName, modifiers, ClassKind.ENUM_ENTRY, hasPrimaryConstructor = true,
                         hasSecondaryConstructor = classBodyNode.getChildNodesByType(SECONDARY_CONSTRUCTOR).isNotEmpty(),
+                        hasDefaultConstructor = false,
                         delegatedSelfTypeRef = buildResolvedTypeRef {
                             type = ConeClassLikeTypeImpl(
                                 this@buildAnonymousObject.symbol.toLookupTag(),
@@ -566,10 +582,6 @@ class DeclarationsConverter(
                     convertPrimaryConstructor(null, enumClassWrapper)?.let { declarations += it.firConstructor }
                     classBodyNode?.also { declarations += convertClassBody(it, enumClassWrapper) }
                 }
-            }
-            symbol = FirVariableSymbol(CallableId(context.currentClassId, enumEntryName))
-            status = FirDeclarationStatusImpl(Visibilities.PUBLIC, Modality.FINAL).apply {
-                isStatic = true
             }
         }
     }
