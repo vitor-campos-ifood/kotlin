@@ -1,4 +1,3 @@
-// EXPECTED_REACHABLE_NODES: 1311
 // !LANGUAGE: +FunctionalInterfaceConversion
 
 fun interface Foo {

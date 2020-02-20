@@ -1,6 +1,6 @@
-// EXPECTED_REACHABLE_NODES: 1309
 // !LANGUAGE: +NewInference +FunctionalInterfaceConversion +SamConversionPerArgument +SamConversionForKotlinFunctions
 // IGNORE_BACKEND_FIR: JVM_IR
+// SKIP_DCE_DRIVEN
 
 fun interface Foo {
     fun invoke(): String
